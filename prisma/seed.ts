@@ -72,7 +72,17 @@ async function main() {
     },
   ];
 
-  const createdCategories = [];
+  const createdCategories: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    imageUrl: string | null;
+    isActive: boolean;
+    sortOrder: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = [];
+
   for (const categoryData of categories) {
     const category = await prisma.category.upsert({
       where: { name: categoryData.name },
@@ -239,22 +249,29 @@ async function main() {
   for (const itemData of menuItems) {
     const category = createdCategories.find(cat => cat.name === itemData.categoryName);
     if (category) {
-      await prisma.menuItem.upsert({
-        where: { 
-          // Create a unique constraint based on name and categoryId
-          id: `${itemData.name}-${category.id}`.replace(/\s+/g, '-').toLowerCase()
-        },
-        update: {},
-        create: {
+      // For MongoDB, we need to check if the item exists first
+      const existingItem = await prisma.menuItem.findFirst({
+        where: {
           name: itemData.name,
-          description: itemData.description,
-          price: itemData.price,
           categoryId: category.id,
-          isSpicy: itemData.isSpicy || false,
-          isVegetarian: itemData.isVegetarian || false,
-          prepTime: itemData.prepTime,
         },
       });
+
+      if (!existingItem) {
+        await prisma.menuItem.create({
+          data: {
+            name: itemData.name,
+            description: itemData.description,
+            price: itemData.price,
+            categoryId: category.id,
+            isSpicy: itemData.isSpicy || false,
+            isVegetarian: itemData.isVegetarian || false,
+            prepTime: itemData.prepTime,
+          },
+        });
+      }
+    } else {
+      console.warn(`⚠️ Category not found for item: ${itemData.name}`);
     }
   }
   console.log('✅ Menu items created');
@@ -292,13 +309,15 @@ async function main() {
   ];
 
   for (const galleryData of galleryItems) {
-    await prisma.gallery.upsert({
-      where: { 
-        id: galleryData.title.replace(/\s+/g, '-').toLowerCase()
-      },
-      update: {},
-      create: galleryData,
+    const existingGalleryItem = await prisma.gallery.findFirst({
+      where: { title: galleryData.title },
     });
+
+    if (!existingGalleryItem) {
+      await prisma.gallery.create({
+        data: galleryData,
+      });
+    }
   }
   console.log('✅ Gallery items created');
 
@@ -319,9 +338,18 @@ async function main() {
   ];
 
   for (const reviewData of reviews) {
-    await prisma.review.create({
-      data: reviewData,
+    const existingReview = await prisma.review.findFirst({
+      where: {
+        userId: reviewData.userId,
+        comment: reviewData.comment,
+      },
     });
+
+    if (!existingReview) {
+      await prisma.review.create({
+        data: reviewData,
+      });
+    }
   }
   console.log('✅ Sample reviews created');
 
@@ -382,7 +410,7 @@ async function main() {
   for (const settingData of settings) {
     await prisma.settings.upsert({
       where: { key: settingData.key },
-      update: {},
+      update: { value: settingData.value },
       create: settingData,
     });
   }
