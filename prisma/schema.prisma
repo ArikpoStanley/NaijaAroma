@@ -1,0 +1,211 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum OrderType {
+  DELIVERY
+  PICKUP
+}
+
+enum CateringStatus {
+  INQUIRY
+  QUOTED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  email       String    @unique
+  username    String    @unique
+  phone       String
+  password    String
+  role        UserRole  @default(CUSTOMER)
+  isVerified  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  orders      Order[]
+  catering    CateringInquiry[]
+  reviews     Review[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String    @unique
+  description String?
+  imageUrl    String?
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  menuItems   MenuItem[]
+
+  @@map("categories")
+}
+
+model MenuItem {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String
+  price       Float
+  imageUrl    String?
+  isAvailable Boolean   @default(true)
+  isSpicy     Boolean   @default(false)
+  isVegetarian Boolean  @default(false)
+  prepTime    Int?      // in minutes
+  categoryId  String    @db.ObjectId
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+
+  @@map("menu_items")
+}
+
+model Order {
+  id              String      @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber     String      @unique
+  userId          String      @db.ObjectId
+  type            OrderType
+  status          OrderStatus @default(PENDING)
+  totalAmount     Float
+  deliveryFee     Float?
+  
+  // Customer details
+  customerName    String
+  customerPhone   String
+  customerEmail   String
+  
+  // Delivery details
+  deliveryAddress String?
+  deliveryNotes   String?
+  
+  // Payment details
+  paymentStatus   String      @default("pending")
+  paymentMethod   String?
+  stripePaymentId String?
+  
+  // Timing
+  requestedTime   DateTime?
+  estimatedTime   DateTime?
+  deliveredAt     DateTime?
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  user            User        @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  orderId     String    @db.ObjectId
+  menuItemId  String    @db.ObjectId
+  quantity    Int
+  price       Float
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem    MenuItem  @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_items")
+}
+
+model CateringInquiry {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String?        @db.ObjectId
+  name          String
+  email         String
+  phone         String
+  eventType     String
+  eventDate     DateTime
+  guestCount    Int
+  location      String
+  requirements  String
+  budget        Float?
+  status        CateringStatus @default(INQUIRY)
+  quotedAmount  Float?
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  user          User?          @relation(fields: [userId], references: [id])
+
+  @@map("catering_inquiries")
+}
+
+model Review {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String    @db.ObjectId
+  rating      Int       // 1-5 stars
+  comment     String
+  isApproved  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("reviews")
+}
+
+model Gallery {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  imageUrl    String
+  category    String    // "food", "events", "restaurant"
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("gallery")
+}
+
+model Settings {
+  id                String    @id @default(auto()) @map("_id") @db.ObjectId
+  key               String    @unique
+  value             String
+  description       String?
+  updatedAt         DateTime  @updatedAt
+
+  @@map("settings")
+}

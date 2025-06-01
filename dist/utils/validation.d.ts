@@ -1,0 +1,11 @@
+import Joi from 'joi';
+export declare const registerValidation: Joi.ObjectSchema<any>;
+export declare const loginValidation: Joi.ObjectSchema<any>;
+export declare const menuItemValidation: Joi.ObjectSchema<any>;
+export declare const categoryValidation: Joi.ObjectSchema<any>;
+export declare const orderValidation: Joi.ObjectSchema<any>;
+export declare const cateringInquiryValidation: Joi.ObjectSchema<any>;
+export declare const reviewValidation: Joi.ObjectSchema<any>;
+export declare const galleryValidation: Joi.ObjectSchema<any>;
+export declare function validateInput<T>(schema: Joi.ObjectSchema, input: unknown): T;
+export declare function validateObjectId(id: string, fieldName?: string): void;
