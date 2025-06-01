@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "src/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/graphql",
+      "dest": "src/index.ts"
+    },
+    {
+      "src": "/playground",
+      "dest": "src/index.ts"
+    },
+    {
+      "src": "/health",
+      "dest": "src/index.ts"
+    },
+    {
+      "src": "/uploads/(.*)",
+      "dest": "src/index.ts"
+    },
+    {
+      "src": "/webhook/(.*)",
+      "dest": "src/index.ts"
+    },
+    {
+      "src": "/upload/(.*)",
+      "dest": "src/index.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "src/index.ts"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "src/index.ts": {
+      "maxDuration": 30
+    }
+  },
+  "installCommand": "npm install",
+  "buildCommand": "npm run compile"
+}

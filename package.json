@@ -5,13 +5,15 @@
   "main": "index.js",
   "scripts": {
     "compile": "tsc",
-    "start": "npm run compile && node ./dist/index.js",
+    "start": "npm run compile",
     "dev": "tsx watch src/index.ts",
     "clean": "rm -rf dist",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "build": "npm run compile",
+    "vercel-build": "npm run compile && npx prisma generate"
   },
   "keywords": ["graphql", "food-ordering", "nigerian-restaurant"],
   "author": "",
